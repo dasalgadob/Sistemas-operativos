@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/time.h>
 
 struct Pairs{
 	long i,j;
@@ -12,9 +13,8 @@ void *runner(void *param);
 
 int main(int argc, char *argv[])
 {
-	clock_t start, end;
-     	double cpu_time_used;
-	start = clock();        
+	struct timeval start, end;
+	gettimeofday(&start, NULL);
 
 	pthread_attr_t attr; /* set of thread attributes*/
 	int n_threads=0;
@@ -68,9 +68,11 @@ int main(int argc, char *argv[])
 	}
         printf("suma total = %f\n", sum*4);
 
-	end = clock();
-	cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-	printf("program took %f seconds to execute \n", cpu_time_used); 
+	gettimeofday(&end, NULL);
+	long seconds = (end.tv_sec - start.tv_sec);
+	long micros = ((seconds * 1000000) + end.tv_usec) - (start.tv_usec);
+
+	printf("Time elpased is %d seconds and %d micros\n", seconds, micros);
 }
 
 
