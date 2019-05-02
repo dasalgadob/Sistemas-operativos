@@ -7,7 +7,8 @@
 struct Pairs{
 	long i,j;
 	double sum;
-}; 
+};
+
 double sum;
 void *runner(void *param);
 
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
 		pair[i] =  malloc(sizeof(struct Pairs));
 		pair[i]->i = i*amount;
         	pair[i]->j = ((i+1)*amount)-1;
-		pair[i]->sum = 0.0;	
+		pair[i]->sum = 0.0;
 	}
         //s1.a = 1;
         //s1.b = 2;
@@ -97,7 +98,7 @@ void *runner(void *param)
 		}else{
 			//printf("Resta: %f\n", 1/(double) i);
 			tempSum-=1/(double)i;
-		}		
+		}
 	}
 	myPair->sum = tempSum;
 	pthread_exit(0);
