@@ -35,9 +35,9 @@ void abort_(const char * s, ...)
 }
 
 int kernel_size;
-int width, height;
-png_byte color_type;
-png_byte bit_depth, bit_depth2;
+int width, height, widthC, heightC;
+png_byte color_type, color_typeC;
+png_byte bit_depth, bit_depth2, bit_depthC;
 //int matrix_result[10000][10000][4];
 
 png_structp png_ptr, png_ptr2;
@@ -155,12 +155,12 @@ void read_png_file2(char* file_name)
         png_read_info(png_ptr2, info_ptr2);
         //png_read_info(png_ptr2, info_ptr2);
 
-        width = png_get_image_width(png_ptr2, info_ptr2);
-        height = png_get_image_height(png_ptr2, info_ptr2);
-        color_type = png_get_color_type(png_ptr2, info_ptr2);
-        bit_depth = png_get_bit_depth(png_ptr2, info_ptr2);
-        printf("bit_depth: %d\n",bit_depth );
-        number_of_passes = png_set_interlace_handling(png_ptr2);
+        widthC = png_get_image_width(png_ptr2, info_ptr2);
+        heightC = png_get_image_height(png_ptr2, info_ptr2);
+        color_typeC = png_get_color_type(png_ptr2, info_ptr2);
+        bit_depthC = png_get_bit_depth(png_ptr2, info_ptr2);
+        printf("bit_depth: %d\n",bit_depthC );
+        number_of_passes2 = png_set_interlace_handling(png_ptr2);
         //Duplicate
         /*
         width = png_get_image_width(png_ptr2, info_ptr2);
@@ -179,8 +179,8 @@ void read_png_file2(char* file_name)
                 abort_("[read_png_file] Error during read_image");
 
         //row_pointers = (png_bytep*) malloc(sizeof(png_bytep) * height);
-        row_pointers2 = (png_bytep*) malloc(sizeof(png_bytep) * height);
-        for (int y=0; y<height; y++)
+        row_pointers2 = (png_bytep*) malloc(sizeof(png_bytep) * heightC);
+        for (int y=0; y<heightC; y++)
                 //row_pointers[y] = (png_byte*) malloc(png_get_rowbytes(png_ptr,info_ptr));
                 row_pointers2[y] = (png_byte*) malloc(png_get_rowbytes(png_ptr2,info_ptr2));
 
@@ -275,8 +275,8 @@ void write_png_file2(char* file_name)
         if (setjmp(png_jmpbuf(png_ptr2)))
                 abort_("[write_png_file] Error during writing header");
 
-        png_set_IHDR(png_ptr2, info_ptr2, width, height,
-                     bit_depth, color_type, PNG_INTERLACE_NONE,
+        png_set_IHDR(png_ptr2, info_ptr2, widthC, heightC,
+                     bit_depthC, color_typeC, PNG_INTERLACE_NONE,
                      PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
         png_write_info(png_ptr2, info_ptr2);
@@ -286,7 +286,7 @@ void write_png_file2(char* file_name)
         if (setjmp(png_jmpbuf(png_ptr2)))
                 abort_("[write_png_file] Error during writing bytes");
 
-        png_write_image(png_ptr2, row_pointers);
+        png_write_image(png_ptr2, row_pointers2);
 
 
         /* end write */
@@ -337,7 +337,7 @@ void *process_file(void *param)
 
             }
             //Asignar valor a posicion de la convolucion
-            png_byte* row_change = row_pointers[y + (myPair->k/2)];
+            png_byte* row_change = row_pointers2[y + (myPair->k/2)];
             png_byte* position = &(row_change[(x+ (myPair->k/2))*4]);
             position[0] = (int) rsum;
             position[1] = (int) gsum;
@@ -359,46 +359,6 @@ void *process_file(void *param)
   pthread_exit(0);
 }
 
-void process_file_join(void)
-{
-        if (png_get_color_type(png_ptr, info_ptr) == PNG_COLOR_TYPE_RGB)
-                abort_("[process_file] input file is PNG_COLOR_TYPE_RGB but must be PNG_COLOR_TYPE_RGBA "
-                       "(lacks the alpha channel)");
-
-        if (png_get_color_type(png_ptr, info_ptr) != PNG_COLOR_TYPE_RGBA)
-                abort_("[process_file] color_type of input file must be PNG_COLOR_TYPE_RGBA (%d) (is %d)",
-                       PNG_COLOR_TYPE_RGBA, png_get_color_type(png_ptr, info_ptr));
-
-        for (int y=0; y<height; y++) {
-                png_byte* row = row_pointers[y];
-                for (int x=0; x<width; x++) {
-                        png_byte* ptr = &(row[x*4]);
-                        //printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n",
-                        //       x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
-
-                        /* set red value to 0 and green value to the blue one */
-                        if(y>= kernel_size/2 && y< height - kernel_size/2 && x>= kernel_size/2 && x < width - kernel_size/2){
-                          //ptr[0] = matrix_result[y][x][0];
-                          //ptr[1] = matrix_result[y][x][1];
-                          //ptr[2] = matrix_result[y][x][2];
-                          //ptr[3] = matrix_result[y][x][3];
-                        }
-
-                }
-        }
-}
-
-/*
-void preprocessing(){
-  //Fill matrix with zeros
-  for(int i=0; i<10000;i++){
-    for(int j=0;j<10000;j++){
-      for(int k=0;k<4;k++){
-        matrix_result[i][j][k]=0;
-      }
-    }
-  }
-}*/
 
 
   void copyFile(char* sourcePath, char*  destPath){
@@ -448,6 +408,7 @@ int main(int argc, char **argv)
   //preprocessing();
   copyFile(argv[1], "temporal.png");
   read_png_file(argv[1]);
+  read_png_file2("temporal.png");
   //write_png_file("temp.png");
   //read_png_file2("temp.png");
 
@@ -481,11 +442,9 @@ int main(int argc, char **argv)
   pthread_join(tid[i], NULL);
   }
 
-  //process_file_join();
-
   //process_file();
-  write_png_file(argv[2]);
-
+  //write_png_file(argv[2]);
+  write_png_file2(argv[2]);
 
   gettimeofday(&end, NULL);
 	long seconds = (end.tv_sec - start.tv_sec);
