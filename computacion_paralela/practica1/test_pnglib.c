@@ -38,7 +38,7 @@ int kernel_size;
 int width, height;
 png_byte color_type;
 png_byte bit_depth, bit_depth2;
-int matrix_result[10000][10000][4];
+//int matrix_result[10000][10000][4];
 
 png_structp png_ptr, png_ptr2;
 png_infop info_ptr, info_ptr2;
@@ -378,16 +378,17 @@ void process_file_join(void)
 
                         /* set red value to 0 and green value to the blue one */
                         if(y>= kernel_size/2 && y< height - kernel_size/2 && x>= kernel_size/2 && x < width - kernel_size/2){
-                          ptr[0] = matrix_result[y][x][0];
-                          ptr[1] = matrix_result[y][x][1];
-                          ptr[2] = matrix_result[y][x][2];
-                          ptr[3] = matrix_result[y][x][3];
+                          //ptr[0] = matrix_result[y][x][0];
+                          //ptr[1] = matrix_result[y][x][1];
+                          //ptr[2] = matrix_result[y][x][2];
+                          //ptr[3] = matrix_result[y][x][3];
                         }
 
                 }
         }
 }
 
+/*
 void preprocessing(){
   //Fill matrix with zeros
   for(int i=0; i<10000;i++){
@@ -397,7 +398,32 @@ void preprocessing(){
       }
     }
   }
-}
+}*/
+
+
+  void copyFile(char* sourcePath, char*  destPath){
+    FILE *source, *target;
+    int i;
+    source = fopen(sourcePath, "rb");
+
+    if( source == NULL ) { printf("Press any key to exit...\n");} //exit(EXIT_FAILURE);
+
+    fseek(source, 0, SEEK_END);
+    int length = ftell(source);
+
+    fseek(source, 0, SEEK_SET);
+    target = fopen(destPath, "wb");
+
+    if( target == NULL ) { fclose(source); } //exit(EXIT_FAILURE);
+
+    for(i = 0; i < length; i++){
+        fputc(fgetc(source), target);
+    }
+
+    printf("File copied successfully.\n");
+    fclose(source);
+    fclose(target);
+  }
 
 
 int main(int argc, char **argv)
@@ -419,8 +445,8 @@ int main(int argc, char **argv)
           fprintf(stderr, "%d must be >=0\n", atoi(argv[4]));
           return -1;
   }
-  preprocessing();
-
+  //preprocessing();
+  copyFile(argv[1], "temporal.png");
   read_png_file(argv[1]);
   //write_png_file("temp.png");
   //read_png_file2("temp.png");
